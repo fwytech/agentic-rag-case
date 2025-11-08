@@ -1,0 +1,39 @@
+# ============================================
+# 混合RAG系统依赖
+# Hybrid RAG System Dependencies
+# ============================================
+
+# 核心依赖
+openai>=1.0.0                 # 阿里云百炼API（兼容OpenAI接口）
+chromadb>=0.4.22             # 本地向量数据库
+python-dotenv>=1.0.0         # 环境变量管理
+
+# Web搜索
+duckduckgo-search>=4.0.0     # 免费Web搜索
+
+# 数据处理
+typing-extensions>=4.0.0      # 类型提示扩展
+
+# 可选：文档处理
+# PyPDF2>=3.0.0               # PDF处理
+# python-docx>=0.8.11         # Word文档处理
+# beautifulsoup4>=4.12.0      # HTML处理
+
+# 可选：进度显示
+# tqdm>=4.65.0                # 进度条
+
+# 可选：日志增强
+# loguru>=0.7.0               # 更好的日志
+
+# ============================================
+# 安装说明
+# ============================================
+
+# 基础安装:
+# pip install -r requirements.txt
+
+# 使用国内镜像加速:
+# pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+
+# 或使用阿里云镜像:
+# pip install -i https://mirrors.aliyun.com/pypi/simple/ -r requirements.txt
