@@ -55,15 +55,61 @@
 
 ### 环境要求
 - Python 3.8+
-- Ollama
+- Ollama（本地模式）或阿里云百炼API Key（在线模式）
 - 相关API密钥
 
 ### 安装依赖
+
+本项目支持 **uv** 包管理器和传统 **pip** 两种方式。
+
+#### 方式一：使用 uv (推荐)
+
 ```bash
+# 1. 安装 uv (如果还没安装)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. 进入项目目录
+cd agentic_rag_smart_qa_project
+
+# 3. 同步依赖
+uv sync
+
+# 4. (可选) 安装开发工具
+uv sync --extra dev
+```
+
+#### 方式二：使用 pip
+
+```bash
+# 进入项目目录
+cd agentic_rag_smart_qa_project
+
+# 安装依赖
 pip install -r requirements.txt
 ```
 
+### 配置环境变量
+
+```bash
+# 复制环境变量模板
+cp .env.example .env
+
+# 编辑 .env 文件
+# LLM_PROVIDER=ollama  # 本地模式
+# 或
+# LLM_PROVIDER=online  # 在线模式
+```
+
 ### 运行应用
+
+#### 使用 uv 运行
+
+```bash
+uv run streamlit run app.py
+```
+
+#### 使用 pip 运行
+
 ```bash
 streamlit run app.py
 ```

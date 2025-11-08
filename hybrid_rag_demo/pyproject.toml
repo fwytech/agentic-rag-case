@@ -1,0 +1,117 @@
+[project]
+name = "hybrid-rag-demo"
+version = "2.0.0"
+description = "混合RAG演示系统 - 智能路由 + 双引擎架构 + 成本优化"
+authors = [
+    {name = "fwytech", email = "fwytech@126.com"}
+]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+keywords = ["hybrid-rag", "agentic-rag", "traditional-rag", "intelligent-routing", "cost-optimization"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "openai>=1.0.0",
+    "chromadb>=0.4.22",
+    "python-dotenv>=1.0.0",
+    "duckduckgo-search>=4.0.0",
+    "typing-extensions>=4.0.0",
+]
+
+[project.optional-dependencies]
+# 文档处理扩展
+documents = [
+    "PyPDF2>=3.0.0",
+    "python-docx>=0.8.11",
+    "beautifulsoup4>=4.12.0",
+]
+# 进度和日志增强
+monitoring = [
+    "tqdm>=4.65.0",
+    "loguru>=0.7.0",
+]
+# 开发工具
+dev = [
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+]
+# 所有可选依赖
+all = [
+    "PyPDF2>=3.0.0",
+    "python-docx>=0.8.11",
+    "beautifulsoup4>=4.12.0",
+    "tqdm>=4.65.0",
+    "loguru>=0.7.0",
+]
+
+[project.scripts]
+hybrid-rag = "hybrid_rag:main"
+
+[project.urls]
+Homepage = "https://github.com/fwytech/agentic-rag-case"
+Repository = "https://github.com/fwytech/agentic-rag-case/tree/main/hybrid_rag_demo"
+Issues = "https://github.com/fwytech/agentic-rag-case/issues"
+Documentation = "https://github.com/fwytech/agentic-rag-case/blob/main/hybrid_rag_demo/README.md"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "pytest>=7.4.0",
+]
+
+[tool.hatchling.build.targets.wheel]
+packages = ["."]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | \.tox
+  | build
+  | dist
+  | __pycache__
+  | vector_db
+  | data
+)/
+'''
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=. --cov-report=term-missing"

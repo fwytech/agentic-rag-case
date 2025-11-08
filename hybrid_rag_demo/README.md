@@ -80,8 +80,30 @@ hybrid_rag_demo/
 
 ### 1. 安装依赖
 
+本项目支持 **uv** 包管理器和传统 **pip** 两种方式。
+
+#### 方式一：使用 uv (推荐)
+
 ```bash
-# 克隆项目
+# 1. 安装 uv (如果还没安装)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. 进入项目目录
+cd hybrid_rag_demo
+
+# 3. 同步依赖
+uv sync
+
+# 4. (可选) 安装额外功能
+uv sync --extra documents  # 文档处理支持
+uv sync --extra monitoring # 监控和日志
+uv sync --extra all        # 所有可选功能
+```
+
+#### 方式二：使用 pip
+
+```bash
+# 进入项目目录
 cd hybrid_rag_demo
 
 # 安装依赖
@@ -118,6 +140,15 @@ cp your_documents/*.txt data/documents/
 ```
 
 ### 4. 运行演示
+
+#### 使用 uv 运行
+
+```bash
+# 运行混合RAG系统
+uv run python hybrid_rag.py
+```
+
+#### 使用 pip 运行
 
 ```bash
 # 运行混合RAG系统

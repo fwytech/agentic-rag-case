@@ -92,6 +92,37 @@ agentic-rag-case/
 
 ### 2. 环境准备
 
+本仓库所有项目现已支持 **uv** 包管理器，提供更快的依赖安装和更好的包隔离。
+
+#### 方式一：使用 uv (推荐)
+
+```bash
+# 1. 安装 uv (如果还没安装)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. 克隆仓库
+git clone https://github.com/fwytech/agentic-rag-case.git
+cd agentic-rag-case
+
+# 3. 选择子项目并安装依赖
+# 对于根目录的 RAG 原理对比演示
+uv sync
+
+# 对于混合RAG演示系统
+cd hybrid_rag_demo/
+uv sync
+
+# 对于智能问答系统
+cd agentic_rag_smart_qa_project/
+uv sync
+
+# 4. 配置环境变量
+cp .env.example .env
+# 编辑 .env 文件，填入API密钥
+```
+
+#### 方式二：使用传统 pip
+
 ```bash
 # 克隆仓库
 git clone https://github.com/fwytech/agentic-rag-case.git
@@ -110,11 +141,31 @@ cp .env.example .env
 
 ### 3. 运行演示
 
+#### 使用 uv 运行
+
 ```bash
-# 混合RAG演示
-python demo.py
+# RAG 原理对比演示（根目录）
+uv run python agentic_rag.py      # Agentic RAG
+uv run python traditional_rag.py  # Traditional RAG
+
+# 混合RAG演示系统
+cd hybrid_rag_demo/
+uv run python hybrid_rag.py
 
 # 智能问答系统
+cd agentic_rag_smart_qa_project/
+uv run streamlit run app.py
+```
+
+#### 使用 pip 运行
+
+```bash
+# 混合RAG演示
+cd hybrid_rag_demo/
+python hybrid_rag.py
+
+# 智能问答系统
+cd agentic_rag_smart_qa_project/
 streamlit run app.py
 
 # 核心功能测试

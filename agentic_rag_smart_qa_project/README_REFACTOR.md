@@ -85,7 +85,11 @@ ONLINE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 
 ## 🚀 快速开始
 
+本项目现已支持 **uv** 包管理器，提供更快的依赖安装和更好的包隔离。
+
 ### 方式一：使用本地 Ollama (默认)
+
+#### 使用 uv (推荐) ⭐
 
 ```bash
 # 1. 安装 Ollama
@@ -97,6 +101,28 @@ ollama pull nomic-embed-text
 
 # 3. 启动 Ollama 服务
 ollama serve
+
+# 4. 安装 uv (如果还没安装)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 5. 进入项目目录
+cd agentic_rag_smart_qa_project
+
+# 6. 同步依赖
+uv sync
+
+# 7. 配置环境变量 (可选，默认即为本地模式)
+cp .env.example .env
+# LLM_PROVIDER=ollama  # 默认
+
+# 8. 启动应用
+uv run streamlit run app.py
+```
+
+#### 使用 pip
+
+```bash
+# 1-3. 同上安装和启动 Ollama
 
 # 4. 配置环境变量 (可选，默认即为本地模式)
 cp .env.example .env
@@ -110,6 +136,34 @@ streamlit run app.py
 ```
 
 ### 方式二：使用在线 API (阿里云百炼)
+
+#### 使用 uv (推荐) ⭐
+
+```bash
+# 1. 安装 uv (如果还没安装)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. 进入项目目录
+cd agentic_rag_smart_qa_project
+
+# 3. 同步依赖
+uv sync
+
+# 4. 配置环境变量
+cp .env.example .env
+
+# 5. 编辑 .env 文件
+nano .env
+
+# 修改以下内容:
+LLM_PROVIDER=online
+ONLINE_API_KEY=你的阿里云百炼API密钥  # 或使用默认测试密钥
+
+# 6. 启动应用 (无需 Ollama)
+uv run streamlit run app.py
+```
+
+#### 使用 pip
 
 ```bash
 # 1. 配置环境变量
