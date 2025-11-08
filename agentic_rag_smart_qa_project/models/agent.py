@@ -1,6 +1,5 @@
 from typing import List, Dict, Optional, Any, Callable
 import logging
-from langchain.llms import Ollama
 from langchain.schema import BaseMessage, HumanMessage, AIMessage, SystemMessage
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain.prompts import PromptTemplate
@@ -8,31 +7,40 @@ from langchain.tools import Tool, StructuredTool
 from langchain.memory import ConversationBufferMemory
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from config.settings import Settings
+from services.llm_client import UnifiedLLMClient
 
 logger = logging.getLogger(__name__)
 
 class AgenticRAGAgent:
-    """Agentic RAG智能问答代理"""
-    
+    """Agentic RAG智能问答代理 - 支持 Ollama 和在线 API"""
+
     def __init__(
         self,
-        model_name: str = "qwen:7b",
+        model_name: str = None,
         temperature: float = 0.7,
         max_tokens: int = 2048,
         tools: Optional[List[Callable]] = None,
         enable_memory: bool = True,
         system_prompt: Optional[str] = None
     ):
-        self.model_name = model_name
+        self.settings = Settings()
+        self.model_name = model_name or self.settings.get_default_model()
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.tools = tools or []
         self.enable_memory = enable_memory
         self.system_prompt = system_prompt or self._get_default_system_prompt()
-        
-        # 初始化LLM
-        self.llm = self._initialize_llm()
-        
+
+        # 初始化统一的 LLM 客户端
+        self.llm_client = UnifiedLLMClient(
+            model_name=self.model_name,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens
+        )
+
+        # 获取 LangChain 兼容的 LLM 对象
+        self.llm = self.llm_client.get_llm()
+
         # 初始化记忆
         if self.enable_memory:
             self.memory = ConversationBufferMemory(
@@ -40,9 +48,13 @@ class AgenticRAGAgent:
                 return_messages=True,
                 output_key="output"
             )
-        
+
         # 初始化代理
         self.agent = self._initialize_agent()
+
+        # 记录初始化信息
+        provider_info = self.llm_client.get_provider_info()
+        logger.info(f"Agent 初始化完成 - 提供商: {provider_info['provider']}, 模型: {provider_info['model']}")
         
     def _get_default_system_prompt(self) -> str:
         """获取默认系统提示词"""
@@ -63,20 +75,6 @@ class AgenticRAGAgent:
 - 当需要查询天气时，使用weather_query工具
 - 根据用户问题的具体需求选择合适的工具
 """
-
-    def _initialize_llm(self) -> Ollama:
-        """初始化语言模型"""
-        try:
-            llm = Ollama(
-                model=self.model_name,
-                temperature=self.temperature,
-                num_predict=self.max_tokens,
-                callbacks=[StreamingStdOutCallbackHandler()] if Settings().LOG_LEVEL == "DEBUG" else None
-            )
-            return llm
-        except Exception as e:
-            logger.error(f"初始化LLM失败: {str(e)}")
-            raise
 
     def _initialize_agent(self):
         """初始化代理"""
@@ -218,11 +216,15 @@ class AgenticRAGAgent:
 
     def get_model_info(self) -> Dict[str, Any]:
         """获取模型信息"""
+        provider_info = self.llm_client.get_provider_info()
+
         return {
+            "provider": provider_info.get("provider", "未知"),
             "model_name": self.model_name,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
             "tools_count": len(self.tools),
             "memory_enabled": self.enable_memory,
-            "system_prompt_length": len(self.system_prompt)
+            "system_prompt_length": len(self.system_prompt),
+            "base_url": provider_info.get("base_url", "")
         }

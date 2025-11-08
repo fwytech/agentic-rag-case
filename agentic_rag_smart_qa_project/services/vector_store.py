@@ -9,38 +9,25 @@ import faiss
 from langchain.vectorstores import FAISS
 from langchain.schema import Document
 from langchain.embeddings.base import Embeddings
-from langchain_community.embeddings import OllamaEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from config.settings import Settings
+from services.llm_client import UnifiedEmbeddingClient
 
 logger = logging.getLogger(__name__)
 
 class VectorStoreService:
-    """向量存储服务类"""
-    
-    def __init__(self, embedding_model: str = "ollama"):
+    """向量存储服务类 - 支持 Ollama 和在线 API embedding"""
+
+    def __init__(self):
         self.settings = Settings()
-        self.embedding_model_name = embedding_model
-        self.embeddings = self._initialize_embeddings()
+        # 使用统一的嵌入客户端
+        self.embedding_client = UnifiedEmbeddingClient()
+        self.embeddings = self.embedding_client.get_embeddings()
         self.vector_store = None
         self.documents = []
         self.index_path = None
-        
-    def _initialize_embeddings(self) -> Embeddings:
-        """初始化嵌入模型"""
-        try:
-            if self.embedding_model_name == "ollama":
-                embeddings = OllamaEmbeddings(model="nomic-embed-text")
-            else:
-                # 可以扩展其他嵌入模型
-                raise ValueError(f"不支持的嵌入模型: {self.embedding_model_name}")
-            
-            logger.info(f"嵌入模型初始化成功: {self.embedding_model_name}")
-            return embeddings
-            
-        except Exception as e:
-            logger.error(f"初始化嵌入模型失败: {str(e)}")
-            raise
+
+        logger.info(f"向量存储服务初始化成功 - 提供商: {self.settings.LLM_PROVIDER}, 嵌入模型: {self.settings.get_embedding_model()}")
 
     def create_vector_store(self, documents: List[Document]) -> FAISS:
         """创建向量存储"""

@@ -39,11 +39,12 @@ class AgenticRAGSystem:
             st.session_state.initialized = True
             st.session_state.chat_history = []
             st.session_state.vector_store_ready = False
-            st.session_state.current_model = self.settings.DEFAULT_MODEL
+            st.session_state.current_model = self.settings.get_default_model()
             st.session_state.temperature = self.settings.DEFAULT_TEMPERATURE
             st.session_state.max_tokens = self.settings.DEFAULT_MAX_TOKENS
             st.session_state.top_k = self.settings.DEFAULT_TOP_K
             st.session_state.search_type = self.settings.DEFAULT_SEARCH_TYPE
+            st.session_state.llm_provider = self.settings.LLM_PROVIDER
             
         # 创建必要的目录
         os.makedirs(self.settings.DATA_DIR, exist_ok=True)
@@ -187,13 +188,29 @@ class AgenticRAGSystem:
         # 侧边栏
         with st.sidebar:
             st.header("⚙️ 系统配置")
-            
+
+            # LLM 提供商信息
+            provider_info = self.settings.get_provider_info()
+            st.info(f"🔧 **LLM 提供商**: {provider_info['provider']}\n\n"
+                   f"📡 **服务地址**: {provider_info['base_url']}\n\n"
+                   f"🎯 **嵌入模型**: {provider_info['embedding']}")
+
+            st.markdown("---")
+
             # 模型设置
             st.subheader("模型设置")
+
+            # 获取可用模型列表
+            available_models = self.settings.get_available_models()
+
+            # 确保当前模型在列表中
+            if st.session_state.current_model not in available_models:
+                st.session_state.current_model = self.settings.get_default_model()
+
             st.session_state.current_model = st.selectbox(
                 "选择模型:",
-                self.settings.AVAILABLE_MODELS,
-                index=self.settings.AVAILABLE_MODELS.index(st.session_state.current_model)
+                available_models,
+                index=available_models.index(st.session_state.current_model) if st.session_state.current_model in available_models else 0
             )
             
             st.session_state.temperature = st.slider(
