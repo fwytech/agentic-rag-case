@@ -60,6 +60,8 @@
 
 ### 主控类设计
 
+**代码文件：** `study-agentic-rag/02-hybrid-rag-system/hybrid_rag.py`
+
 ```python
 """
 混合RAG系统
@@ -139,6 +141,8 @@ class HybridRAG:
 
 ### 文档管理方法
 
+**代码文件：** `study-agentic-rag/02-hybrid-rag-system/hybrid_rag.py`
+
 ```python
     def add_documents(self, texts: list, metadatas: list = None):
         """
@@ -171,6 +175,8 @@ class HybridRAG:
 ---
 
 ### 核心查询方法
+
+**代码文件：** `study-agentic-rag/02-hybrid-rag-system/hybrid_rag.py`
 
 ```python
     def query(self, question: str, force_strategy: str = None) -> Dict:
@@ -286,6 +292,8 @@ class HybridRAG:
 ---
 
 ### 统计分析方法
+
+**代码文件：** `study-agentic-rag/02-hybrid-rag-system/hybrid_rag.py`
 
 ```python
     def get_stats(self) -> Dict:

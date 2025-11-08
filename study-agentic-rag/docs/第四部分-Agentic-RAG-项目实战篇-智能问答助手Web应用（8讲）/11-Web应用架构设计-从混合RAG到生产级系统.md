@@ -297,6 +297,8 @@ agentic_rag_smart_qa_project/
 
 ### settings.py核心内容
 
+**代码文件：** `study-agentic-rag/03-smart-qa-application/config/settings.py`
+
 ```python
 import os
 from pathlib import Path

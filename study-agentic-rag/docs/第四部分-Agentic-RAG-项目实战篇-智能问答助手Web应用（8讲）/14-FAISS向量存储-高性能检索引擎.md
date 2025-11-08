@@ -87,6 +87,8 @@ graph TD
 
 ### 第一部分：初始化和创建向量存储（1-51行）
 
+**代码文件：** `study-agentic-rag/03-smart-qa-application/services/vector_store.py`
+
 这部分初始化服务，并提供从文档创建向量存储的方法。
 
 <details>
@@ -180,6 +182,8 @@ class VectorStoreService:
    - 相比原生FAISS API，减少90%代码
 
 ### 第二部分：索引加载和保存（53-118行）
+
+**代码文件：** `study-agentic-rag/03-smart-qa-application/services/vector_store.py`
 
 这部分实现向量存储的持久化功能。
 
@@ -292,6 +296,8 @@ class VectorStoreService:
 
 ### 第三部分：搜索功能（120-166行）
 
+**代码文件：** `study-agentic-rag/03-smart-qa-application/services/vector_store.py`
+
 这部分实现两种检索策略：相似度搜索和MMR搜索。
 
 <details>
@@ -392,6 +398,8 @@ class VectorStoreService:
    - 用户可配置阈值（默认0.5）
 
 ### 第四部分：文档管理（168-213行）
+
+**代码文件：** `study-agentic-rag/03-smart-qa-application/services/vector_store.py`
 
 这部分实现文档的增删改功能。
 
@@ -500,6 +508,8 @@ class VectorStoreService:
    - 空列表会导致判断失效
 
 ### 第五部分：辅助功能（215-310行）
+
+**代码文件：** `study-agentic-rag/03-smart-qa-application/services/vector_store.py`
 
 这部分提供统计、文档分割等辅助功能。
 

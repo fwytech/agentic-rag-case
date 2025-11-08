@@ -90,6 +90,8 @@ class TraditionalRAGEngine:
 
 ### 第1部分：初始化与配置
 
+**代码文件：** `study-agentic-rag/02-hybrid-rag-system/traditional_rag_engine.py`
+
 **这部分要做什么？**
 
 建立引擎的基础设施：连接LLM、连接ChromaDB、加载或创建向量集合。
@@ -205,6 +207,8 @@ class TraditionalRAGEngine:
 
 ### 第2部分：文档管理
 
+**代码文件：** `study-agentic-rag/02-hybrid-rag-system/traditional_rag_engine.py`
+
 **这部分要做什么？**
 
 批量添加文档到向量数据库，包括生成嵌入和存储。
@@ -291,6 +295,8 @@ def add_documents_batch(self, texts: List[str], batch_size=10):
 ---
 
 ### 第3部分：查询处理
+
+**代码文件：** `study-agentic-rag/02-hybrid-rag-system/traditional_rag_engine.py`
 
 **这部分要做什么？**
 
@@ -473,6 +479,8 @@ generate_answer(question, docs)
 ---
 
 ## 四、完整代码总结
+
+**代码文件：** `study-agentic-rag/02-hybrid-rag-system/traditional_rag_engine.py`
 
 完整的 `traditional_rag_engine.py` 文件（约250行）：
 

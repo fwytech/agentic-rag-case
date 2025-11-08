@@ -106,6 +106,8 @@ class AgenticRAGEngine:
 
 ### 第1部分：初始化与配置
 
+**代码文件：** `study-agentic-rag/02-hybrid-rag-system/agentic_rag_engine.py`
+
 **这部分要做什么？**
 
 建立引擎基础设施，连接LLM和向量数据库，配置Agent参数。
@@ -203,6 +205,8 @@ class AgenticRAGEngine:
 ---
 
 ### 第2部分：工具系统实现
+
+**代码文件：** `study-agentic-rag/02-hybrid-rag-system/agentic_rag_engine.py`
 
 **这部分要做什么？**
 
@@ -358,6 +362,8 @@ class AgenticRAGEngine:
 ---
 
 ### 第3部分：ReAct框架 - Think, Act, Observe
+
+**代码文件：** `study-agentic-rag/02-hybrid-rag-system/agentic_rag_engine.py`
 
 **这部分要做什么？**
 
@@ -577,6 +583,8 @@ class AgenticRAGEngine:
 
 ### 第4部分：ReAct主循环
 
+**代码文件：** `study-agentic-rag/02-hybrid-rag-system/agentic_rag_engine.py`
+
 **这部分要做什么？**
 
 整合Think-Act-Observe，实现完整的迭代推理循环。
@@ -689,6 +697,8 @@ class AgenticRAGEngine:
 ---
 
 ## 四、完整代码总结
+
+**代码文件：** `study-agentic-rag/02-hybrid-rag-system/agentic_rag_engine.py`
 
 完整的 `agentic_rag_engine.py` 文件（约450行）：
 

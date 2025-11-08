@@ -140,6 +140,8 @@ EMBEDDING_MODEL=text-embedding-v1
 
 ### 第一部分：初始化和配置（建立连接）
 
+**代码文件：** `study-agentic-rag/01-rag-comparison/traditional_rag.py`
+
 **这部分要做什么？**
 1. 加载环境变量
 2. 连接到阿里云百炼 LLM
@@ -236,6 +238,8 @@ class TraditionalRAG:
 
 ### 第二部分：文档嵌入（文本变成数字）
 
+**代码文件：** `study-agentic-rag/01-rag-comparison/traditional_rag.py`
+
 **这部分要做什么？**
 1. 将文本转换为向量（调用 Embedding API）
 2. 将文档批量导入向量数据库
@@ -331,6 +335,8 @@ class TraditionalRAG:
 
 ### 第三部分：向量搜索（找到最相关的文档）
 
+**代码文件：** `study-agentic-rag/01-rag-comparison/traditional_rag.py`
+
 **这部分要做什么？**
 1. 将用户问题转成向量
 2. 在向量库中找最相似的文档
@@ -408,6 +414,8 @@ ChromaDB 默认使用欧氏距离。
 ---
 
 ### 第四部分：LLM 答案生成（基于上下文回答）
+
+**代码文件：** `study-agentic-rag/01-rag-comparison/traditional_rag.py`
 
 **这部分要做什么？**
 1. 将检索到的文档拼接成上下文
@@ -503,6 +511,8 @@ temperature = 1.0  → 非常随机，很有创意（适合创作）
 
 ### 第五部分：完整流程整合（一气呵成）
 
+**代码文件：** `study-agentic-rag/01-rag-comparison/traditional_rag.py`
+
 **这部分要做什么？**
 将上面的步骤串起来，形成完整的 RAG 查询流程。
 
@@ -561,6 +571,8 @@ temperature = 1.0  → 非常随机，很有创意（适合创作）
 
 为了方便你复制运行，这里给出完整的可运行代码：
 
+**代码文件：** `study-agentic-rag/01-rag-comparison/traditional_rag.py`
+
 **`traditional_rag.py` 完整代码：**
 
 ```python
@@ -572,6 +584,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import chromadb
 from chromadb.config import Settings
+import PyPDF2
 from typing import List
 
 # 加载环境变量
@@ -615,6 +628,17 @@ class TraditionalRAG:
         except Exception as e:
             print(f"❌ 嵌入失败: {e}")
             return [0.0] * 1536
+
+    def load_pdf(self, pdf_path: str) -> List[str]:
+        """加载PDF文档"""
+        with open(pdf_path, 'rb') as file:
+            pdf_reader = PyPDF2.PdfReader(file)
+            texts = []
+            for page in pdf_reader.pages:
+                text = page.extract_text()
+                if text.strip():
+                    texts.append(text)
+        return texts
 
     def ingest_documents(self, texts: List[str]):
         """将文档导入向量数据库"""
@@ -706,6 +730,18 @@ class TraditionalRAG:
 
         return answer, docs
 
+    def reset_collection(self):
+        """重置集合（清空所有文档）"""
+        try:
+            self.chroma_client.delete_collection(name=CHROMA_COLLECTION_NAME)
+            self.collection = self.chroma_client.create_collection(
+                name=CHROMA_COLLECTION_NAME,
+                metadata={"description": "Traditional RAG collection"}
+            )
+            print("✅ 集合已重置")
+        except Exception as e:
+            print(f"❌ 重置失败: {e}")
+
 
 # ============================================
 # 使用示例
@@ -747,6 +783,40 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+"""
+传统RAG的优点:
+✅ 实现简单,易于理解和维护
+✅ 响应速度快(单次检索 + 单次LLM调用)
+✅ 成本低(LLM调用次数少)
+✅ 行为可预测,易于调试
+✅ 适合高并发场景
+✅ 本地化部署(使用ChromaDB)
+
+传统RAG的局限:
+❌ 单一数据源,知识覆盖有限
+❌ 无法获取实时信息
+❌ 一次性检索,无法根据结果调整
+❌ 不验证检索质量
+❌ 难以处理复杂的多步推理查询
+❌ 无法使用外部工具(计算器、API等)
+
+适用场景:
+- 企业内部文档查询
+- 产品手册/技术文档问答
+- 简单的FAQ系统
+- 客服机器人(快速响应)
+- 成本敏感的应用
+- 高并发场景
+- 不需要实时外部信息的应用
+
+技术栈:
+- LLM: 阿里云百炼平台 Qwen-Plus
+- 嵌入: 阿里云 text-embedding-v1
+- 向量数据库: ChromaDB (本地持久化)
+- 兼容: OpenAI API格式
+"""
 ```
 
 ---

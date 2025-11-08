@@ -97,6 +97,8 @@ EMBEDDING_MODEL=text-embedding-v1
 
 ### 第1部分：Agent初始化与配置
 
+**代码文件：** `study-agentic-rag/01-rag-comparison/agentic_rag.py`
+
 **这部分要做什么？**
 
 建立Agentic RAG的基础设施：
@@ -229,6 +231,8 @@ class AgenticRAG:
 ---
 
 ### 第2部分：多工具系统实现
+
+**代码文件：** `study-agentic-rag/01-rag-comparison/agentic_rag.py`
 
 **这部分要做什么？**
 
@@ -393,6 +397,8 @@ class AgenticRAG:
 
 ### 第3部分：ReAct框架 - 思考阶段(Think)
 
+**代码文件：** `study-agentic-rag/01-rag-comparison/agentic_rag.py`
+
 **这部分要做什么？**
 
 实现Agent的"大脑"：分析问题，决定是否需要工具，选择哪个工具。
@@ -508,6 +514,8 @@ class AgenticRAG:
 ---
 
 ### 第4部分：ReAct框架 - 行动与观察(Act & Observe)
+
+**代码文件：** `study-agentic-rag/01-rag-comparison/agentic_rag.py`
 
 **这部分要做什么？**
 
@@ -679,6 +687,8 @@ class AgenticRAG:
 
 ### 第5部分：完整集成 - ReAct主循环
 
+**代码文件：** `study-agentic-rag/01-rag-comparison/agentic_rag.py`
+
 **这部分要做什么？**
 
 把 Think → Act → Observe 串起来，形成完整的Agentic RAG查询流程。
@@ -831,6 +841,8 @@ iteration = 0
 ---
 
 ## 四、完整代码总结
+
+**代码文件：** `study-agentic-rag/01-rag-comparison/agentic_rag.py`
 
 为了确保代码完整性，这里给出完整的 `agentic_rag.py` 文件：
 

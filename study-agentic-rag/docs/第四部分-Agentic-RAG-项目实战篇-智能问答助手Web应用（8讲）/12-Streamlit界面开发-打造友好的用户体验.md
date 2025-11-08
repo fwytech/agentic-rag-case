@@ -50,6 +50,8 @@ graph TD
 
 ### 第一部分：系统初始化和页面配置（1-52行）
 
+**代码文件：** `study-agentic-rag/03-smart-qa-application/app.py`
+
 这部分负责创建应用类、配置页面、初始化会话状态。
 
 <details>
@@ -137,6 +139,8 @@ class AgenticRAGSystem:
    - 延迟初始化，等配置完成后再创建
 
 ### 第二部分：Agent创建和工具配置（54-118行）
+
+**代码文件：** `study-agentic-rag/03-smart-qa-application/app.py`
 
 这部分动态创建Agent，并根据向量存储状态决定加载哪些工具。
 
@@ -248,6 +252,8 @@ class AgenticRAGSystem:
 
 ### 第三部分：文档处理流程（120-164行）
 
+**代码文件：** `study-agentic-rag/03-smart-qa-application/app.py`
+
 这部分处理用户上传的文件，显示处理进度，构建向量存储。
 
 <details>
@@ -337,6 +343,8 @@ class AgenticRAGSystem:
 
 ### 第四部分：对话生成逻辑（166-180行）
 
+**代码文件：** `study-agentic-rag/03-smart-qa-application/app.py`
+
 这部分是核心业务逻辑，调用Agent生成回答。
 
 <details>
@@ -379,6 +387,8 @@ class AgenticRAGSystem:
    - 记录日志便于调试
 
 ### 第五部分：主界面布局（182-365行）
+
+**代码文件：** `study-agentic-rag/03-smart-qa-application/app.py`
 
 这是最复杂的部分，包含侧边栏配置和主聊天界面。
 

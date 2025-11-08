@@ -96,6 +96,8 @@ graph TD
 我们将230行代码拆分成5个部分讲解。
 
 ### 第一部分：Agent类初始化和LLM客户端（1-58行）
+**代码文件：** `study-agentic-rag/03-smart-qa-application/models/agent.py`
+
 
 这部分定义Agent类，集成双模式LLM客户端和记忆管理。
 
@@ -204,6 +206,8 @@ class AgenticRAGAgent:
    - 后续调用只需`self.agent.invoke()`
 
 ### 第二部分：系统提示词配置（59-77行）
+**代码文件：** `study-agentic-rag/03-smart-qa-application/models/agent.py`
+
 
 这部分定义默认系统提示词，指导Agent行为。
 
@@ -269,6 +273,8 @@ class AgenticRAGAgent:
    - 工具名和实际函数名需要匹配
 
 ### 第三部分：工具创建和代理初始化（79-124行）
+**代码文件：** `study-agentic-rag/03-smart-qa-application/models/agent.py`
+
 
 这部分将普通函数转换为LangChain Tool，并创建ReAct Agent。
 
@@ -386,6 +392,8 @@ class AgenticRAGAgent:
      ```
 
 ### 第四部分：提示词模板和生成回答（126-171行）
+**代码文件：** `study-agentic-rag/03-smart-qa-application/models/agent.py`
+
 
 这部分定义ReAct提示词模板，并实现生成回答的核心逻辑。
 
@@ -494,6 +502,8 @@ class AgenticRAGAgent:
    - 优化：发现死循环或低效路径
 
 ### 第五部分：工具和记忆管理（173-230行）
+**代码文件：** `study-agentic-rag/03-smart-qa-application/models/agent.py`
+
 
 这部分提供工具动态添加、记忆管理、配置更新等功能。
 

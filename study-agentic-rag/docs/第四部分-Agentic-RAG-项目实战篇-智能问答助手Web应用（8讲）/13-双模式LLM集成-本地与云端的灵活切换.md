@@ -61,6 +61,8 @@ graph TD
 
 ### 第一部分：客户端初始化逻辑（1-52行）
 
+**代码文件：** `study-agentic-rag/03-smart-qa-application/services/llm_client.py`
+
 这部分定义了`UnifiedLLMClient`类，实现自动选择LLM提供商。
 
 <details>
@@ -155,6 +157,8 @@ class UnifiedLLMClient:
 
 ### 第二部分：Ollama本地模式初始化（54-67行）
 
+**代码文件：** `study-agentic-rag/03-smart-qa-application/services/llm_client.py`
+
 这部分初始化Ollama本地模型。
 
 <details>
@@ -212,6 +216,8 @@ class UnifiedLLMClient:
 
 ### 第三部分：在线API模式初始化（69-83行）
 
+**代码文件：** `study-agentic-rag/03-smart-qa-application/services/llm_client.py`
+
 这部分初始化阿里云百炼在线API（兼容OpenAI接口）。
 
 <details>
@@ -261,6 +267,8 @@ class UnifiedLLMClient:
    - 与Ollama的`num_predict`形成对比
 
 ### 第四部分：统一调用接口（85-128行）
+
+**代码文件：** `study-agentic-rag/03-smart-qa-application/services/llm_client.py`
 
 这部分提供统一的调用方法，屏蔽底层差异。
 
@@ -353,6 +361,8 @@ class UnifiedLLMClient:
      ```
 
 ### 第五部分：嵌入模型客户端（131-216行）
+
+**代码文件：** `study-agentic-rag/03-smart-qa-application/services/llm_client.py`
 
 这部分实现了统一的嵌入模型客户端，支持双模式。
 
