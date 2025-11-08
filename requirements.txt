@@ -1,48 +1,169 @@
+# ============================================
 # Agentic RAG Implementation Dependencies
+# 使用阿里云百炼平台和ChromaDB
+# ============================================
 
-# Core LLM and Embeddings
+# ============================================
+# 核心依赖 - LLM和嵌入
+# ============================================
+
+# OpenAI SDK - 用于调用阿里云百炼平台(兼容OpenAI接口)
 openai>=1.0.0
-langchain>=0.1.0
-langchain-openai>=0.0.5
-langchain-community>=0.0.20
-langchain-elasticsearch>=0.1.0
-litellm>=1.0.0
 
-# Vector Database
-elasticsearch>=8.0.0
-
-# Web Search
-duckduckgo-search>=3.9.0
-
-# Document Processing
-PyPDF2>=3.0.0
-
-# Environment Configuration
+# 环境变量管理
 python-dotenv>=1.0.0
 
-# Data Processing
-numpy>=1.24.0
-pandas>=2.0.0
+# ============================================
+# 向量数据库 - ChromaDB
+# ============================================
 
-# Optional: Monitoring and Logging
-loguru>=0.7.0
+# ChromaDB - 轻量级本地向量数据库
+chromadb>=0.4.22
 
-# Optional: Performance Optimization
-redis>=5.0.0  # For caching
-tiktoken>=0.5.0  # Token counting
+# ============================================
+# Web搜索工具
+# ============================================
 
-# Optional: Advanced RAG Features
-faiss-cpu>=1.7.4  # Alternative vector store
-chromadb>=0.4.0  # Alternative vector store
-pinecone-client>=3.0.0  # Cloud vector store
+# DuckDuckGo搜索 - 免费,无需API Key
+duckduckgo-search>=4.0.0
 
-# Development Dependencies
-pytest>=7.4.0
-black>=23.0.0
-flake8>=6.0.0
-mypy>=1.0.0
+# ============================================
+# 文档处理
+# ============================================
 
-# Jupyter Notebook Support (for examples)
-jupyter>=1.0.0
-notebook>=7.0.0
-ipykernel>=6.25.0
+# PDF文档处理
+PyPDF2>=3.0.0
+
+# ============================================
+# 数据处理和工具
+# ============================================
+
+# 类型提示
+typing-extensions>=4.0.0
+
+# JSON处理 (Python内置,但声明兼容性)
+# json - 内置模块
+
+# ============================================
+# 可选依赖
+# ============================================
+
+# 日志增强
+# loguru>=0.7.0
+
+# 性能监控
+# tiktoken>=0.5.0  # Token计数
+
+# 进度条
+# tqdm>=4.65.0
+
+# ============================================
+# 开发依赖 (可选)
+# ============================================
+
+# 代码格式化
+# black>=23.0.0
+# flake8>=6.0.0
+
+# 类型检查
+# mypy>=1.0.0
+
+# 测试
+# pytest>=7.4.0
+# pytest-cov>=4.1.0
+
+# Jupyter支持
+# jupyter>=1.0.0
+# notebook>=7.0.0
+# ipykernel>=6.25.0
+
+# ============================================
+# 最小安装 (快速开始)
+# ============================================
+
+# 如果只想快速测试,安装以下依赖即可:
+# pip install openai chromadb python-dotenv duckduckgo-search PyPDF2
+
+# ============================================
+# 完整安装命令
+# ============================================
+
+# pip install -r requirements.txt
+
+# ============================================
+# 国内镜像加速 (可选)
+# ============================================
+
+# 使用清华镜像:
+# pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+
+# 使用阿里云镜像:
+# pip install -i https://mirrors.aliyun.com/pypi/simple/ -r requirements.txt
+
+# ============================================
+# 版本说明
+# ============================================
+
+# openai>=1.0.0
+#   - 支持最新的API格式
+#   - 兼容阿里云百炼平台
+
+# chromadb>=0.4.22
+#   - 稳定版本,支持本地持久化
+#   - 修复了早期版本的若干bug
+
+# duckduckgo-search>=4.0.0
+#   - 最新版本,支持更多搜索选项
+#   - 无需API Key,免费使用
+
+# ============================================
+# 已移除的依赖 (相比原版)
+# ============================================
+
+# 以下依赖在重构后已移除:
+# - elasticsearch - 已替换为ChromaDB
+# - langchain - 直接使用OpenAI SDK
+# - langchain-openai - 同上
+# - langchain-community - 同上
+# - langchain-elasticsearch - 已使用ChromaDB
+# - litellm - 不需要多模型支持
+
+# ============================================
+# 兼容性说明
+# ============================================
+
+# Python版本要求: Python 3.8+
+# 推荐版本: Python 3.10+
+
+# 操作系统:
+# - Linux: 完全支持
+# - macOS: 完全支持
+# - Windows: 完全支持 (ChromaDB可能需要Visual C++ 编译工具)
+
+# ============================================
+# 故障排查
+# ============================================
+
+# 问题1: ChromaDB安装失败
+# 解决: 安装C++编译工具
+#   Windows: 安装 Visual C++ Build Tools
+#   Linux: sudo apt-get install build-essential
+#   macOS: xcode-select --install
+
+# 问题2: DuckDuckGo搜索超时
+# 解决: 设置代理或使用VPN
+#   export HTTPS_PROXY=http://proxy.example.com:8080
+
+# 问题3: OpenAI包版本冲突
+# 解决: 升级到最新版本
+#   pip install --upgrade openai
+
+# ============================================
+# 更新日志
+# ============================================
+
+# 2024-01-XX: 重构为使用阿里云百炼平台和ChromaDB
+#   - 移除Elasticsearch依赖
+#   - 移除LangChain依赖
+#   - 添加ChromaDB支持
+#   - 简化依赖树

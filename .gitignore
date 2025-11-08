@@ -43,10 +43,15 @@ ENV/
 .ipynb_checkpoints
 *.ipynb
 
-# Elasticsearch Certificates
+# Elasticsearch Certificates (已弃用)
 http_ca.crt
 *.pem
 *.key
+
+# ChromaDB数据目录
+chroma_db/
+chroma_db_agentic/
+*.chroma
 
 # Logs
 *.log

@@ -53,9 +53,9 @@ agentic-rag-case/
 
 ### 前置要求
 
-- Python 3.8+
-- Elasticsearch 8.x (用于向量存储)
-- Azure OpenAI账号 (或其他兼容的LLM API)
+- Python 3.8+ (推荐 3.10+)
+- 阿里云百炼平台账号 (获取API Key)
+- 无需额外数据库服务器 (使用ChromaDB本地存储)
 
 ### 安装依赖
 
@@ -80,21 +80,19 @@ nano .env
 
 **必需的环境变量:**
 ```env
-# Elasticsearch配置
-ES_USER=elastic
-ES_PASSWORD=your_es_password
-ES_ENDPOINT=localhost
+# 阿里云百炼平台配置
+API_KEY=sk-abe3417c96f6441b83efed38708bcfb6
+BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+MODEL_ID=qwen-plus
+EMBEDDING_MODEL=text-embedding-v1
 
-# Azure OpenAI配置
-AZURE_EMBEDDING_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_EMBEDDING_API_KEY=your_embedding_key
-AZURE_EMBEDDING_API_VERSION=2023-05-15
-AZURE_API_KEY=your_api_key
-AZURE_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_API_VERSION=2023-05-15
-AZURE_DEPLOYMENT_ID=gpt-4
-MODEL_NAME=text-embedding-ada-002
+# ChromaDB会自动在本地创建数据目录,无需额外配置
 ```
+
+**获取阿里云百炼API Key:**
+1. 访问 https://bailian.console.aliyun.com/
+2. 进入"API-KEY管理"页面
+3. 创建新的API Key并复制
 
 ### 运行示例
 
@@ -106,9 +104,23 @@ python traditional_rag.py
 
 **预期输出:**
 ```
-📥 正在摄入 4 个文档到Elasticsearch...
-✨ 创建新索引: traditional_rag_index
+============================================================
+🎯 Traditional RAG 演示
+   使用阿里云百炼平台 (Qwen) + ChromaDB
+============================================================
+🚀 初始化Traditional RAG系统...
+✅ 已连接到阿里云百炼平台
+   模型: qwen-plus
+   嵌入模型: text-embedding-v1
+✨ 创建新集合: traditional_rag_collection
+
+📥 正在摄入 5 个文档到ChromaDB...
+   🔄 正在生成嵌入向量...
+      处理文档 1/5
+      处理文档 2/5
+      ...
 ✅ 文档摄入完成!
+   集合中共有 5 个文档
 
 ============================================================
 📝 用户问题: 什么是机器学习?
@@ -126,6 +138,10 @@ python traditional_rag.py
 ============================================================
 ❓ 问题: 什么是机器学习?
 💡 答案: 机器学习是人工智能的一个子集，专注于开发能够从数据中学习...
+
+📚 使用的文档片段:
+  [1] (距离: 0.2543)
+  机器学习是AI的一个子集,专注于开发能够从数据中学习和改进的算法...
 ============================================================
 ```
 
@@ -137,8 +153,20 @@ python agentic_rag.py
 
 **预期输出:**
 ```
-📥 正在摄入 3 个文档到Elasticsearch...
+============================================================
+🎯 Agentic RAG 演示
+   使用阿里云百炼平台 (Qwen) + ChromaDB + ReAct框架
+============================================================
+🚀 初始化Agentic RAG系统...
+✅ 已连接到阿里云百炼平台
+   LLM模型: qwen-plus
+   嵌入模型: text-embedding-v1
+✨ 创建新集合: agentic_rag_collection
+
+📥 正在摄入 4 个文档到ChromaDB...
+   🔄 正在生成嵌入向量...
 ✅ 文档摄入完成!
+   集合中共有 4 个文档
 
 ============================================================
 📝 用户问题: 什么是Agentic RAG?它与传统RAG有什么区别?

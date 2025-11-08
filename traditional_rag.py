@@ -1,78 +1,102 @@
 """
-传统RAG实现示例
-Traditional RAG Implementation
+传统RAG实现示例 - 使用阿里云百炼平台和ChromaDB
+Traditional RAG Implementation with Alibaba Qwen and ChromaDB
 
-工作流程：
+工作流程:
 1. 用户查询 → 向量化
 2. 向量相似度搜索 → 检索TOP-K文档
 3. 拼接上下文
 4. LLM生成答案
 
-特点：
+特点:
 - 简单、直接、可预测
-- 单一数据源（向量数据库）
+- 单一数据源（ChromaDB本地向量数据库）
 - 一次性检索，无验证
 - 响应快速
 """
 
 import os
 from dotenv import load_dotenv
-from elasticsearch import Elasticsearch
-from langchain_openai import AzureOpenAIEmbeddings
-from langchain_elasticsearch import ElasticsearchStore
-from openai import AzureOpenAI
+from openai import OpenAI
+import chromadb
+from chromadb.config import Settings
 import PyPDF2
+from typing import List
 
 # 加载环境变量
 load_dotenv()
 
 # 配置常量
-ES_USER = os.getenv("ES_USER", "elastic")
-ES_PASSWORD = os.getenv("ES_PASSWORD")
-ES_ENDPOINT = os.getenv("ES_ENDPOINT", "localhost")
-MODEL_NAME = os.getenv("MODEL_NAME", "text-embedding-ada-002")
-AZURE_EMBEDDING_ENDPOINT = os.getenv("AZURE_EMBEDDING_ENDPOINT")
-AZURE_EMBEDDING_API_KEY = os.getenv("AZURE_EMBEDDING_API_KEY")
-AZURE_EMBEDDING_API_VERSION = os.getenv("AZURE_EMBEDDING_API_VERSION", "2023-05-15")
-AZURE_API_KEY = os.getenv("AZURE_API_KEY")
-AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT")
-AZURE_API_VERSION = os.getenv("AZURE_API_VERSION")
-AZURE_DEPLOYMENT_ID = os.getenv("AZURE_DEPLOYMENT_ID")
+API_KEY = os.getenv("API_KEY", "sk-abe3417c96f6441b83efed38708bcfb6")
+BASE_URL = os.getenv("BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+MODEL_ID = os.getenv("MODEL_ID", "qwen-plus")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-v1")
 
-ELASTIC_INDEX_NAME = "traditional_rag_index"
+CHROMA_COLLECTION_NAME = "traditional_rag_collection"
 
 
 class TraditionalRAG:
-    """传统RAG实现"""
+    """传统RAG实现 - 使用阿里云百炼平台和ChromaDB"""
 
     def __init__(self):
         """初始化连接和配置"""
-        # 初始化Elasticsearch连接
-        self.es_url = f"https://{ES_USER}:{ES_PASSWORD}@{ES_ENDPOINT}:9200"
-        self.es = Elasticsearch(
-            self.es_url,
-            ca_certs="./http_ca.crt",
-            verify_certs=True
+        print("🚀 初始化Traditional RAG系统...")
+
+        # 初始化阿里云百炼平台客户端（兼容OpenAI接口）
+        self.client = OpenAI(
+            api_key=API_KEY,
+            base_url=BASE_URL
         )
 
-        # 初始化Azure OpenAI Embeddings
-        self.embeddings = AzureOpenAIEmbeddings(
-            model=MODEL_NAME,
-            azure_endpoint=AZURE_EMBEDDING_ENDPOINT,
-            api_key=AZURE_EMBEDDING_API_KEY,
-            openai_api_version=AZURE_EMBEDDING_API_VERSION
+        print(f"✅ 已连接到阿里云百炼平台")
+        print(f"   模型: {MODEL_ID}")
+        print(f"   嵌入模型: {EMBEDDING_MODEL}")
+
+        # 初始化ChromaDB（本地持久化向量数据库）
+        self.chroma_client = chromadb.PersistentClient(
+            path="./chroma_db",
+            settings=Settings(
+                anonymized_telemetry=False,
+                allow_reset=True
+            )
         )
 
-        # 初始化Azure OpenAI Chat
-        self.chat_client = AzureOpenAI(
-            api_key=AZURE_API_KEY,
-            api_version=AZURE_API_VERSION,
-            azure_endpoint=AZURE_ENDPOINT
-        )
+        # 获取或创建集合
+        try:
+            self.collection = self.chroma_client.get_collection(
+                name=CHROMA_COLLECTION_NAME
+            )
+            print(f"📂 使用现有集合: {CHROMA_COLLECTION_NAME}")
+            print(f"   当前文档数: {self.collection.count()}")
+        except Exception:
+            self.collection = self.chroma_client.create_collection(
+                name=CHROMA_COLLECTION_NAME,
+                metadata={"description": "Traditional RAG collection"}
+            )
+            print(f"✨ 创建新集合: {CHROMA_COLLECTION_NAME}")
 
-        self.docsearch = None
+    def get_embedding(self, text: str) -> List[float]:
+        """
+        获取文本的嵌入向量
 
-    def load_pdf(self, pdf_path):
+        参数:
+            text: 要嵌入的文本
+
+        返回:
+            嵌入向量列表
+        """
+        try:
+            response = self.client.embeddings.create(
+                model=EMBEDDING_MODEL,
+                input=text
+            )
+            return response.data[0].embedding
+        except Exception as e:
+            print(f"❌ 嵌入失败: {e}")
+            # 返回一个默认向量（实际应用中应该处理错误）
+            return [0.0] * 1536
+
+    def load_pdf(self, pdf_path: str) -> List[str]:
         """加载PDF文档"""
         with open(pdf_path, 'rb') as file:
             pdf_reader = PyPDF2.PdfReader(file)
@@ -83,42 +107,39 @@ class TraditionalRAG:
                     texts.append(text)
         return texts
 
-    def ingest_documents(self, texts):
+    def ingest_documents(self, texts: List[str]):
         """
-        摄入文档到Elasticsearch向量数据库
+        摄入文档到ChromaDB向量数据库
 
         步骤：
-        1. 检查索引是否存在
-        2. 如果不存在，创建新索引并添加文档
-        3. 如果存在，使用现有索引
+        1. 为每个文档生成嵌入向量
+        2. 存储到ChromaDB
         """
-        print(f"📥 正在摄入 {len(texts)} 个文档到Elasticsearch...")
+        print(f"\n📥 正在摄入 {len(texts)} 个文档到ChromaDB...")
 
-        if not self.es.indices.exists(index=ELASTIC_INDEX_NAME):
-            print(f"✨ 创建新索引: {ELASTIC_INDEX_NAME}")
-            self.docsearch = ElasticsearchStore.from_texts(
-                texts,
-                embedding=self.embeddings,
-                es_url=self.es_url,
-                es_connection=self.es,
-                index_name=ELASTIC_INDEX_NAME,
-                es_user=ES_USER,
-                es_password=ES_PASSWORD
-            )
-        else:
-            print(f"📂 使用现有索引: {ELASTIC_INDEX_NAME}")
-            self.docsearch = ElasticsearchStore(
-                es_connection=self.es,
-                embedding=self.embeddings,
-                es_url=self.es_url,
-                index_name=ELASTIC_INDEX_NAME,
-                es_user=ES_USER,
-                es_password=ES_PASSWORD
-            )
+        # 生成文档ID
+        ids = [f"doc_{i}" for i in range(len(texts))]
 
-        print("✅ 文档摄入完成!")
+        # 获取嵌入向量
+        print("   🔄 正在生成嵌入向量...")
+        embeddings = []
+        for i, text in enumerate(texts):
+            print(f"      处理文档 {i+1}/{len(texts)}")
+            embedding = self.get_embedding(text)
+            embeddings.append(embedding)
 
-    def search(self, query, k=3):
+        # 存储到ChromaDB
+        self.collection.add(
+            ids=ids,
+            embeddings=embeddings,
+            documents=texts,
+            metadatas=[{"source": f"document_{i}"} for i in range(len(texts))]
+        )
+
+        print(f"✅ 文档摄入完成!")
+        print(f"   集合中共有 {self.collection.count()} 个文档")
+
+    def search(self, query: str, k: int = 3) -> List[dict]:
         """
         执行向量相似度搜索
 
@@ -132,17 +153,34 @@ class TraditionalRAG:
         print(f"\n🔍 执行向量搜索: '{query}'")
         print(f"   检索TOP-{k}个相关文档...")
 
-        docs = self.docsearch.similarity_search(query, k=k)
+        # 获取查询的嵌入向量
+        query_embedding = self.get_embedding(query)
+
+        # 在ChromaDB中搜索
+        results = self.collection.query(
+            query_embeddings=[query_embedding],
+            n_results=k
+        )
+
+        # 格式化结果
+        docs = []
+        if results['documents'] and len(results['documents']) > 0:
+            for i, doc in enumerate(results['documents'][0]):
+                docs.append({
+                    'content': doc,
+                    'metadata': results['metadatas'][0][i] if results['metadatas'] else {},
+                    'distance': results['distances'][0][i] if results['distances'] else None
+                })
 
         print(f"✅ 找到 {len(docs)} 个相关文档")
         return docs
 
-    def format_context(self, docs):
+    def format_context(self, docs: List[dict]) -> str:
         """格式化检索到的文档为上下文字符串"""
-        context = "\n\n---\n\n".join([doc.page_content for doc in docs])
+        context = "\n\n---\n\n".join([doc['content'] for doc in docs])
         return context
 
-    def generate_answer(self, query, context):
+    def generate_answer(self, query: str, context: str) -> str:
         """
         使用LLM生成答案
 
@@ -165,22 +203,27 @@ class TraditionalRAG:
 
 请提供准确、详细的答案。如果上下文中没有足够的信息，请诚实地说明。"""
 
-        # 调用LLM
-        response = self.chat_client.chat.completions.create(
-            model=AZURE_DEPLOYMENT_ID,
-            messages=[
-                {"role": "system", "content": "你是一个专业的AI助手，擅长根据提供的上下文回答问题。"},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=1000
-        )
+        # 调用阿里云百炼平台LLM
+        try:
+            response = self.client.chat.completions.create(
+                model=MODEL_ID,
+                messages=[
+                    {"role": "system", "content": "你是一个专业的AI助手，擅长根据提供的上下文回答问题。"},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=1000
+            )
 
-        answer = response.choices[0].message.content
-        print("✅ 答案生成完成!")
-        return answer
+            answer = response.choices[0].message.content
+            print("✅ 答案生成完成!")
+            return answer
 
-    def query(self, question, k=3):
+        except Exception as e:
+            print(f"❌ LLM调用失败: {e}")
+            return f"抱歉，生成答案时出现错误: {str(e)}"
+
+    def query(self, question: str, k: int = 3) -> tuple:
         """
         传统RAG完整流程
 
@@ -196,7 +239,7 @@ class TraditionalRAG:
             k: 检索文档数量
 
         返回:
-            LLM生成的答案
+            (答案, 文档列表)
         """
         print(f"\n{'='*60}")
         print(f"📝 用户问题: {question}")
@@ -204,6 +247,9 @@ class TraditionalRAG:
 
         # 步骤1 & 2: 向量搜索
         docs = self.search(question, k=k)
+
+        if not docs:
+            return "抱歉，没有找到相关信息。", []
 
         # 步骤3: 格式化上下文
         context = self.format_context(docs)
@@ -215,6 +261,18 @@ class TraditionalRAG:
         # 步骤5: 返回
         return answer, docs
 
+    def reset_collection(self):
+        """重置集合（清空所有文档）"""
+        try:
+            self.chroma_client.delete_collection(name=CHROMA_COLLECTION_NAME)
+            self.collection = self.chroma_client.create_collection(
+                name=CHROMA_COLLECTION_NAME,
+                metadata={"description": "Traditional RAG collection"}
+            )
+            print("✅ 集合已重置")
+        except Exception as e:
+            print(f"❌ 重置失败: {e}")
+
 
 # ============================================
 # 使用示例
@@ -223,6 +281,11 @@ class TraditionalRAG:
 def main():
     """主函数 - 演示传统RAG的使用"""
 
+    print("="*60)
+    print("🎯 Traditional RAG 演示")
+    print("   使用阿里云百炼平台 (Qwen) + ChromaDB")
+    print("="*60)
+
     # 初始化传统RAG
     rag = TraditionalRAG()
 
@@ -230,19 +293,28 @@ def main():
     sample_documents = [
         """
         人工智能(AI)是计算机科学的一个分支,致力于创建能够执行通常需要人类智能的任务的系统。
-        这些任务包括视觉感知、语音识别、决策制定和语言翻译。
+        这些任务包括视觉感知、语音识别、决策制定和语言翻译。AI技术在近年来取得了显著进展，
+        特别是在深度学习和神经网络领域。
         """,
         """
         机器学习是AI的一个子集,专注于开发能够从数据中学习和改进的算法,而无需明确编程。
-        深度学习是机器学习的一个子领域,使用类似于人脑的神经网络。
+        深度学习是机器学习的一个子领域,使用类似于人脑的神经网络。常见的机器学习方法包括
+        监督学习、无监督学习和强化学习。
         """,
         """
         自然语言处理(NLP)是AI的一个领域,专注于计算机与人类语言之间的交互。
-        NLP技术使计算机能够理解、解释和生成人类语言。
+        NLP技术使计算机能够理解、解释和生成人类语言。主要应用包括机器翻译、情感分析、
+        文本摘要和问答系统。
         """,
         """
         检索增强生成(RAG)是一种结合信息检索和文本生成的技术。
         它通过从外部知识库检索相关信息来增强语言模型的能力,从而减少幻觉并提高答案的准确性。
+        RAG系统通常包括向量数据库、嵌入模型和大型语言模型三个核心组件。
+        """,
+        """
+        向量数据库是专门用于存储和检索向量嵌入的数据库系统。它们支持高效的相似度搜索，
+        这对于RAG系统至关重要。流行的向量数据库包括ChromaDB、Pinecone、Weaviate和Milvus。
+        ChromaDB是一个轻量级的本地向量数据库，非常适合开发和小规模应用。
         """
     ]
 
@@ -253,7 +325,7 @@ def main():
     test_questions = [
         "什么是机器学习?",
         "RAG是如何工作的?",
-        "NLP的应用有哪些?"
+        "ChromaDB有什么特点?"
     ]
 
     for question in test_questions:
@@ -261,10 +333,12 @@ def main():
 
         print(f"\n{'='*60}")
         print(f"❓ 问题: {question}")
-        print(f"💡 答案: {answer}")
+        print(f"{'='*60}")
+        print(f"💡 答案:\n{answer}")
         print(f"\n📚 使用的文档片段:")
         for i, doc in enumerate(docs, 1):
-            print(f"\n  [{i}] {doc.page_content[:100]}...")
+            print(f"\n  [{i}] (距离: {doc.get('distance', 'N/A'):.4f})")
+            print(f"  {doc['content'][:150]}...")
         print(f"{'='*60}\n")
 
 
@@ -279,6 +353,7 @@ if __name__ == "__main__":
 ✅ 成本低(LLM调用次数少)
 ✅ 行为可预测,易于调试
 ✅ 适合高并发场景
+✅ 本地化部署(使用ChromaDB)
 
 传统RAG的局限:
 ❌ 单一数据源,知识覆盖有限
@@ -295,4 +370,11 @@ if __name__ == "__main__":
 - 客服机器人(快速响应)
 - 成本敏感的应用
 - 高并发场景
+- 不需要实时外部信息的应用
+
+技术栈:
+- LLM: 阿里云百炼平台 Qwen-Plus
+- 嵌入: 阿里云 text-embedding-v1
+- 向量数据库: ChromaDB (本地持久化)
+- 兼容: OpenAI API格式
 """

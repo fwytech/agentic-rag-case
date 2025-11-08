@@ -1,5 +1,5 @@
 """
-Agentic RAG实现示例
+Agentic RAG实现示例 - 使用阿里云百炼平台和ChromaDB
 Agentic RAG Implementation with ReAct Framework
 
 工作流程:
@@ -18,10 +18,9 @@ Agentic RAG Implementation with ReAct Framework
 
 import os
 from dotenv import load_dotenv
-from elasticsearch import Elasticsearch
-from langchain_openai import AzureOpenAIEmbeddings
-from langchain_elasticsearch import ElasticsearchStore
-from openai import AzureOpenAI
+from openai import OpenAI
+import chromadb
+from chromadb.config import Settings
 from duckduckgo_search import DDGS
 import json
 from typing import List, Dict, Any
@@ -30,50 +29,53 @@ from typing import List, Dict, Any
 load_dotenv()
 
 # 配置常量
-ES_USER = os.getenv("ES_USER", "elastic")
-ES_PASSWORD = os.getenv("ES_PASSWORD")
-ES_ENDPOINT = os.getenv("ES_ENDPOINT", "localhost")
-MODEL_NAME = os.getenv("MODEL_NAME", "text-embedding-ada-002")
-AZURE_EMBEDDING_ENDPOINT = os.getenv("AZURE_EMBEDDING_ENDPOINT")
-AZURE_EMBEDDING_API_KEY = os.getenv("AZURE_EMBEDDING_API_KEY")
-AZURE_EMBEDDING_API_VERSION = os.getenv("AZURE_EMBEDDING_API_VERSION", "2023-05-15")
-AZURE_API_KEY = os.getenv("AZURE_API_KEY")
-AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT")
-AZURE_API_VERSION = os.getenv("AZURE_API_VERSION")
-AZURE_DEPLOYMENT_ID = os.getenv("AZURE_DEPLOYMENT_ID")
+API_KEY = os.getenv("API_KEY", "sk-abe3417c96f6441b83efed38708bcfb6")
+BASE_URL = os.getenv("BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+MODEL_ID = os.getenv("MODEL_ID", "qwen-plus")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-v1")
 
-ELASTIC_INDEX_NAME = "agentic_rag_index"
+CHROMA_COLLECTION_NAME = "agentic_rag_collection"
 
 
 class AgenticRAG:
-    """Agentic RAG实现 - 基于ReAct框架"""
+    """Agentic RAG实现 - 基于ReAct框架，使用阿里云百炼平台和ChromaDB"""
 
     def __init__(self):
         """初始化连接、工具和代理配置"""
-        # 初始化Elasticsearch连接
-        self.es_url = f"https://{ES_USER}:{ES_PASSWORD}@{ES_ENDPOINT}:9200"
-        self.es = Elasticsearch(
-            self.es_url,
-            ca_certs="./http_ca.crt",
-            verify_certs=True
+        print("🚀 初始化Agentic RAG系统...")
+
+        # 初始化阿里云百炼平台客户端（兼容OpenAI接口）
+        self.client = OpenAI(
+            api_key=API_KEY,
+            base_url=BASE_URL
         )
 
-        # 初始化Azure OpenAI Embeddings
-        self.embeddings = AzureOpenAIEmbeddings(
-            model=MODEL_NAME,
-            azure_endpoint=AZURE_EMBEDDING_ENDPOINT,
-            api_key=AZURE_EMBEDDING_API_KEY,
-            openai_api_version=AZURE_EMBEDDING_API_VERSION
+        print(f"✅ 已连接到阿里云百炼平台")
+        print(f"   LLM模型: {MODEL_ID}")
+        print(f"   嵌入模型: {EMBEDDING_MODEL}")
+
+        # 初始化ChromaDB（本地持久化向量数据库）
+        self.chroma_client = chromadb.PersistentClient(
+            path="./chroma_db_agentic",
+            settings=Settings(
+                anonymized_telemetry=False,
+                allow_reset=True
+            )
         )
 
-        # 初始化Azure OpenAI Chat
-        self.chat_client = AzureOpenAI(
-            api_key=AZURE_API_KEY,
-            api_version=AZURE_API_VERSION,
-            azure_endpoint=AZURE_ENDPOINT
-        )
-
-        self.docsearch = None
+        # 获取或创建集合
+        try:
+            self.collection = self.chroma_client.get_collection(
+                name=CHROMA_COLLECTION_NAME
+            )
+            print(f"📂 使用现有集合: {CHROMA_COLLECTION_NAME}")
+            print(f"   当前文档数: {self.collection.count()}")
+        except Exception:
+            self.collection = self.chroma_client.create_collection(
+                name=CHROMA_COLLECTION_NAME,
+                metadata={"description": "Agentic RAG collection"}
+            )
+            print(f"✨ 创建新集合: {CHROMA_COLLECTION_NAME}")
 
         # 代理记忆 (短期记忆)
         self.memory = []
@@ -81,33 +83,43 @@ class AgenticRAG:
         # 最大迭代次数(防止无限循环)
         self.max_iterations = 5
 
-    def ingest_documents(self, texts):
-        """摄入文档到Elasticsearch向量数据库"""
-        print(f"📥 正在摄入 {len(texts)} 个文档到Elasticsearch...")
-
-        if not self.es.indices.exists(index=ELASTIC_INDEX_NAME):
-            print(f"✨ 创建新索引: {ELASTIC_INDEX_NAME}")
-            self.docsearch = ElasticsearchStore.from_texts(
-                texts,
-                embedding=self.embeddings,
-                es_url=self.es_url,
-                es_connection=self.es,
-                index_name=ELASTIC_INDEX_NAME,
-                es_user=ES_USER,
-                es_password=ES_PASSWORD
+    def get_embedding(self, text: str) -> List[float]:
+        """获取文本的嵌入向量"""
+        try:
+            response = self.client.embeddings.create(
+                model=EMBEDDING_MODEL,
+                input=text
             )
-        else:
-            print(f"📂 使用现有索引: {ELASTIC_INDEX_NAME}")
-            self.docsearch = ElasticsearchStore(
-                es_connection=self.es,
-                embedding=self.embeddings,
-                es_url=self.es_url,
-                index_name=ELASTIC_INDEX_NAME,
-                es_user=ES_USER,
-                es_password=ES_PASSWORD
-            )
+            return response.data[0].embedding
+        except Exception as e:
+            print(f"❌ 嵌入失败: {e}")
+            return [0.0] * 1536
 
-        print("✅ 文档摄入完成!")
+    def ingest_documents(self, texts: List[str]):
+        """摄入文档到ChromaDB向量数据库"""
+        print(f"\n📥 正在摄入 {len(texts)} 个文档到ChromaDB...")
+
+        # 生成文档ID
+        ids = [f"doc_{i}" for i in range(len(texts))]
+
+        # 获取嵌入向量
+        print("   🔄 正在生成嵌入向量...")
+        embeddings = []
+        for i, text in enumerate(texts):
+            print(f"      处理文档 {i+1}/{len(texts)}")
+            embedding = self.get_embedding(text)
+            embeddings.append(embedding)
+
+        # 存储到ChromaDB
+        self.collection.add(
+            ids=ids,
+            embeddings=embeddings,
+            documents=texts,
+            metadatas=[{"source": f"document_{i}"} for i in range(len(texts))]
+        )
+
+        print(f"✅ 文档摄入完成!")
+        print(f"   集合中共有 {self.collection.count()} 个文档")
 
     # ========================================
     # 工具定义 (Tools)
@@ -127,14 +139,32 @@ class AgenticRAG:
             格式化的文档内容
         """
         print(f"\n🔧 [工具] 向量搜索: '{query}'")
-        docs = self.docsearch.similarity_search(query, k=k)
 
-        if not docs:
-            return "未找到相关文档。"
+        try:
+            # 获取查询的嵌入向量
+            query_embedding = self.get_embedding(query)
 
-        result = "\n\n---\n\n".join([doc.page_content for doc in docs])
-        print(f"   ✅ 找到 {len(docs)} 个相关文档")
-        return result
+            # 在ChromaDB中搜索
+            results = self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=k
+            )
+
+            if not results['documents'] or len(results['documents'][0]) == 0:
+                return "未找到相关文档。"
+
+            # 格式化结果
+            formatted_docs = []
+            for i, doc in enumerate(results['documents'][0]):
+                formatted_docs.append(f"文档{i+1}: {doc}")
+
+            result = "\n\n".join(formatted_docs)
+            print(f"   ✅ 找到 {len(results['documents'][0])} 个相关文档")
+            return result
+
+        except Exception as e:
+            print(f"   ❌ 向量搜索失败: {e}")
+            return f"向量搜索失败: {str(e)}"
 
     def tool_web_search(self, query: str, max_results: int = 3) -> str:
         """
@@ -184,6 +214,10 @@ class AgenticRAG:
         print(f"\n🔧 [工具] 计算器: '{expression}'")
         try:
             # 安全的数学计算(仅允许基本运算)
+            allowed_chars = set('0123456789+-*/() .')
+            if not all(c in allowed_chars for c in expression):
+                return "错误: 表达式包含不允许的字符"
+
             result = eval(expression, {"__builtins__": {}}, {})
             print(f"   ✅ 计算结果: {result}")
             return str(result)
@@ -200,15 +234,18 @@ class AgenticRAG:
         return {
             "vector_search": {
                 "description": "从内部知识库(向量数据库)检索相关文档。适用于查询已知信息、历史数据、内部文档等。",
-                "function": self.tool_vector_search
+                "function": self.tool_vector_search,
+                "parameters": {"query": "搜索查询"}
             },
             "web_search": {
                 "description": "从互联网搜索最新信息。适用于需要实时数据、新闻、当前事件、最新发展等。",
-                "function": self.tool_web_search
+                "function": self.tool_web_search,
+                "parameters": {"query": "搜索查询"}
             },
             "calculator": {
                 "description": "执行数学计算。适用于需要数值运算的问题。",
-                "function": self.tool_calculator
+                "function": self.tool_calculator,
+                "parameters": {"expression": "数学表达式"}
             }
         }
 
@@ -255,7 +292,7 @@ class AgenticRAG:
 请以JSON格式回复,包含以下字段:
 {{
     "need_tool": true/false,
-    "action": "工具名称(如果need_tool=true)",
+    "action": "工具名称(如果need_tool=true,可选: vector_search, web_search, calculator)",
     "action_input": "工具输入参数",
     "reasoning": "你的推理过程"
 }}
@@ -264,24 +301,37 @@ class AgenticRAG:
 """
 
         # 调用LLM进行推理
-        response = self.chat_client.chat.completions.create(
-            model=AZURE_DEPLOYMENT_ID,
-            messages=[
-                {"role": "system", "content": "你是一个专业的AI代理,擅长分析问题并选择合适的工具。"},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3,  # 较低温度保证决策稳定性
-            max_tokens=500
-        )
-
-        # 解析决策
         try:
-            decision = json.loads(response.choices[0].message.content)
+            response = self.client.chat.completions.create(
+                model=MODEL_ID,
+                messages=[
+                    {"role": "system", "content": "你是一个专业的AI代理,擅长分析问题并选择合适的工具。请始终以JSON格式回复。"},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,  # 较低温度保证决策稳定性
+                max_tokens=500
+            )
+
+            # 解析决策
+            content = response.choices[0].message.content.strip()
+
+            # 尝试提取JSON（处理可能的markdown代码块）
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
+
+            decision = json.loads(content)
             print(f"   推理: {decision.get('reasoning', 'N/A')}")
             return decision
-        except json.JSONDecodeError:
-            print("   ⚠️ 决策解析失败,默认返回无需工具")
-            return {"need_tool": False, "reasoning": "解析错误"}
+
+        except json.JSONDecodeError as e:
+            print(f"   ⚠️ 决策解析失败: {e}")
+            print(f"   原始响应: {content}")
+            return {"need_tool": False, "reasoning": "解析错误，直接回答"}
+        except Exception as e:
+            print(f"   ⚠️ LLM调用失败: {e}")
+            return {"need_tool": False, "reasoning": "调用错误"}
 
     def act(self, action: str, action_input: str) -> str:
         """
@@ -343,23 +393,35 @@ class AgenticRAG:
 }}
 """
 
-        response = self.chat_client.chat.completions.create(
-            model=AZURE_DEPLOYMENT_ID,
-            messages=[
-                {"role": "system", "content": "你是一个专业的信息质量评估专家。"},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3,
-            max_tokens=300
-        )
-
         try:
-            evaluation = json.loads(response.choices[0].message.content)
+            response = self.client.chat.completions.create(
+                model=MODEL_ID,
+                messages=[
+                    {"role": "system", "content": "你是一个专业的信息质量评估专家。请始终以JSON格式回复。"},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=300
+            )
+
+            content = response.choices[0].message.content.strip()
+
+            # 提取JSON
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
+
+            evaluation = json.loads(content)
             print(f"   评估: {evaluation.get('reasoning', 'N/A')}")
             return evaluation
+
         except json.JSONDecodeError:
             print("   ⚠️ 评估解析失败,默认认为信息充足")
             return {"is_sufficient": True, "reasoning": "解析错误"}
+        except Exception as e:
+            print(f"   ⚠️ 评估失败: {e}")
+            return {"is_sufficient": True, "reasoning": "评估错误"}
 
     def generate_final_answer(self, question: str, context: str) -> str:
         """
@@ -384,19 +446,24 @@ class AgenticRAG:
 请提供准确、详细、有条理的答案。如果信息不足,请诚实说明。
 """
 
-        response = self.chat_client.chat.completions.create(
-            model=AZURE_DEPLOYMENT_ID,
-            messages=[
-                {"role": "system", "content": "你是一个专业的AI助手,擅长综合信息并生成高质量答案。"},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=1000
-        )
+        try:
+            response = self.client.chat.completions.create(
+                model=MODEL_ID,
+                messages=[
+                    {"role": "system", "content": "你是一个专业的AI助手,擅长综合信息并生成高质量答案。"},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=1000
+            )
 
-        answer = response.choices[0].message.content
-        print("   ✅ 答案生成完成!")
-        return answer
+            answer = response.choices[0].message.content
+            print("   ✅ 答案生成完成!")
+            return answer
+
+        except Exception as e:
+            print(f"   ❌ 答案生成失败: {e}")
+            return f"抱歉，生成答案时出现错误: {str(e)}"
 
     # ========================================
     # Agentic RAG 主流程
@@ -479,6 +546,18 @@ class AgenticRAG:
 
         return final_answer
 
+    def reset_collection(self):
+        """重置集合（清空所有文档）"""
+        try:
+            self.chroma_client.delete_collection(name=CHROMA_COLLECTION_NAME)
+            self.collection = self.chroma_client.create_collection(
+                name=CHROMA_COLLECTION_NAME,
+                metadata={"description": "Agentic RAG collection"}
+            )
+            print("✅ 集合已重置")
+        except Exception as e:
+            print(f"❌ 重置失败: {e}")
+
 
 # ============================================
 # 使用示例
@@ -487,6 +566,11 @@ class AgenticRAG:
 def main():
     """主函数 - 演示Agentic RAG的使用"""
 
+    print("="*60)
+    print("🎯 Agentic RAG 演示")
+    print("   使用阿里云百炼平台 (Qwen) + ChromaDB + ReAct框架")
+    print("="*60)
+
     # 初始化Agentic RAG
     agent_rag = AgenticRAG()
 
@@ -494,16 +578,24 @@ def main():
     sample_documents = [
         """
         人工智能(AI)是计算机科学的一个分支,致力于创建能够执行通常需要人类智能的任务的系统。
-        这些任务包括视觉感知、语音识别、决策制定和语言翻译。
+        这些任务包括视觉感知、语音识别、决策制定和语言翻译。AI技术在近年来取得了显著进展，
+        特别是在深度学习和神经网络领域。
         """,
         """
         检索增强生成(RAG)是一种结合信息检索和文本生成的技术。
         它通过从外部知识库检索相关信息来增强语言模型的能力,从而减少幻觉并提高答案的准确性。
         传统RAG使用单一数据源,而Agentic RAG可以智能地选择多个数据源。
+        RAG系统通常包括向量数据库、嵌入模型和大型语言模型三个核心组件。
         """,
         """
         Agentic RAG使用AI代理来增强检索过程。代理可以访问多种工具,包括向量搜索、Web搜索和计算器。
         通过ReAct框架,代理可以进行推理、行动和观察的循环,直到收集到足够的信息。
+        这种方法显著提高了RAG系统处理复杂查询的能力。
+        """,
+        """
+        ChromaDB是一个轻量级的本地向量数据库，非常适合开发和小规模应用。
+        它支持本地持久化存储，不需要额外的服务器部署，使用简单方便。
+        ChromaDB特别适合快速原型开发和教学演示。
         """
     ]
 
@@ -513,7 +605,7 @@ def main():
     # 测试查询
     test_questions = [
         "什么是Agentic RAG?它与传统RAG有什么区别?",
-        "2024年AI领域有哪些最新进展?",  # 需要Web搜索
+        "ChromaDB有什么特点和优势?",
         "如果一个RAG系统每天处理1000个查询,每个查询调用LLM 3次,一个月调用多少次?"  # 需要计算器
     ]
 
@@ -522,7 +614,7 @@ def main():
 
         print(f"\n{'='*60}")
         print(f"❓ 问题: {question}")
-        print(f"💡 答案: {answer}")
+        print(f"💡 答案:\n{answer}")
         print(f"{'='*60}\n")
 
 
@@ -538,6 +630,7 @@ Agentic RAG的优点:
 ✅ 处理复杂查询 - 多步推理,分解复杂问题
 ✅ 自适应 - 根据问题类型调整策略
 ✅ 可扩展 - 易于添加新工具
+✅ 本地化部署 - 使用ChromaDB本地向量数据库
 
 Agentic RAG的局限:
 ❌ 实现复杂 - 需要设计代理逻辑、工具集成
@@ -560,4 +653,12 @@ Agentic RAG的局限:
 3. 质量评估: Agentic RAG评估检索质量,传统RAG不评估
 4. 迭代检索: Agentic RAG可多次检索,传统RAG只检索一次
 5. LLM调用次数: Agentic RAG多次(思考+评估+生成),传统RAG一次(生成)
+
+技术栈:
+- LLM: 阿里云百炼平台 Qwen-Plus
+- 嵌入: 阿里云 text-embedding-v1
+- 向量数据库: ChromaDB (本地持久化)
+- Web搜索: DuckDuckGo
+- 框架: ReAct (Reasoning + Acting)
+- 兼容: OpenAI API格式
 """
