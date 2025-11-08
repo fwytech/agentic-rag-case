@@ -38,7 +38,7 @@ class Settings:
     OLLAMA_EMBEDDING_MODEL = "nomic-embed-text"
 
     # ==================== 在线 API 配置（阿里云百炼） ====================
-    ONLINE_API_KEY = os.getenv("ONLINE_API_KEY", "sk-abe3417c96f6441b83efed38708bcfb6")
+    ONLINE_API_KEY = os.getenv("ONLINE_API_KEY", "<your api key>")
     ONLINE_BASE_URL = os.getenv("ONLINE_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
     ONLINE_MODELS = [
         "qwen-plus",

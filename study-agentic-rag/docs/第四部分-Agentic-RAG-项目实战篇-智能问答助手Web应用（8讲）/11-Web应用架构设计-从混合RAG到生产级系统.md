@@ -400,7 +400,7 @@ LLM_PROVIDER=ollama  # 或 online
 OLLAMA_BASE_URL=http://localhost:11434
 
 # 阿里云百炼配置（在线API）
-ONLINE_API_KEY=sk-abe3417c96f6441b83efed38708bcfb6
+ONLINE_API_KEY=<your api key>
 ONLINE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 
 # 天气API密钥（可选）

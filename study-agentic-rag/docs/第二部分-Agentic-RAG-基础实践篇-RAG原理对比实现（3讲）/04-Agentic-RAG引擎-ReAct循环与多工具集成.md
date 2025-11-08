@@ -120,7 +120,7 @@ from typing import List, Dict, Any
 load_dotenv()
 
 # 配置常量
-API_KEY = os.getenv("API_KEY", "sk-abe3417c96f6441b83efed38708bcfb6")
+API_KEY = os.getenv("API_KEY", "<your api key>")
 BASE_URL = os.getenv("BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
 MODEL_ID = os.getenv("MODEL_ID", "qwen-plus")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-v1")
@@ -881,7 +881,7 @@ from typing import List, Dict, Any
 load_dotenv()
 
 # 配置常量
-API_KEY = os.getenv("API_KEY", "sk-abe3417c96f6441b83efed38708bcfb6")
+API_KEY = os.getenv("API_KEY", "<your api key>")
 BASE_URL = os.getenv("BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
 MODEL_ID = os.getenv("MODEL_ID", "qwen-plus")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-v1")
