@@ -4,7 +4,7 @@ streamlit==1.28.1
 # AI 框架
 langchain==0.0.335
 langchain-community==0.0.1
-langchain-core==0.1.1
+langchain-core==0.3.80
 
 # 向量数据库
 faiss-cpu==1.7.4
