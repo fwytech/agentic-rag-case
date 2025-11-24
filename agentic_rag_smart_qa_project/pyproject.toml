@@ -42,7 +42,7 @@ dependencies = [
     "openai>=1.0.0",  # 兼容阿里云百炼和 OpenAI API
 
     # 文档处理
-    "pypdf==3.17.0",
+    "pypdf==6.4.0",
     "python-docx==1.1.0",
 
     # HTTP 请求
